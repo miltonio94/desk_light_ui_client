@@ -15,7 +15,6 @@
         ws.onmessage = function (msg) {
             app.ports.incomingWebSocketMsg.send(msg.data);
         };
-
         app.ports.outgoingWebsocketMsg.subscribe(function (message) {
             ws.send(message);
         });

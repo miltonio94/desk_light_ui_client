@@ -8,9 +8,7 @@ import Platform.Cmd as Cmd
 
 
 type alias Model =
-    { lightState : Bool
-    , websocketMsgs : List WebSocketMsg
-    , messageBoxValue : String
+    { lightState : LightState
     }
 
 
@@ -25,29 +23,61 @@ type alias Message =
     }
 
 
+type LightState
+    = LightOn
+    | LightOff
+
+
+lightStateToWebSocketMsg : LightState -> String
+lightStateToWebSocketMsg lightState =
+    case lightState of
+        LightOn ->
+            "ON"
+
+        LightOff ->
+            "OFF"
+
+
+lightStateToChecked : LightState -> Bool
+lightStateToChecked state =
+    case state of
+        LightOn ->
+            True
+
+        LightOff ->
+            False
+
+
+checkedToLightState : Bool -> LightState
+checkedToLightState isChecked =
+    case isChecked of
+        True ->
+            LightOn
+
+        False ->
+            LightOff
+
+
 type Msg
     = LightSwitched Bool
     | WebSocketSendMsg
-    | MessageBoxChanged String
     | WebSocketGotMsg String
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model False [] "", Cmd.none )
+    ( Model LightOff, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
 update msg model =
     case msg of
         LightSwitched state ->
-            update WebSocketSendMsg { model | lightState = state }
+            { model | lightState = checkedToLightState state }
+                |> update WebSocketSendMsg
 
         WebSocketSendMsg ->
-            ( model, outgoingWebsocketMsg "hello" )
-
-        MessageBoxChanged _ ->
-            ( model, Cmd.none )
+            ( model, outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
 
         WebSocketGotMsg _ ->
             ( model, Cmd.none )
@@ -60,7 +90,7 @@ desk_light_switch model =
         [ Html.text "state of light"
         , Html.input
             [ Attributes.type_ "checkbox"
-            , Attributes.checked model.lightState
+            , Attributes.checked (lightStateToChecked model.lightState)
             , Events.onCheck LightSwitched
             ]
             []
