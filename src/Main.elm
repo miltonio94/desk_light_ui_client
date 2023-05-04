@@ -58,8 +58,18 @@ checkedToLightState isChecked =
             LightOff
 
 
+toggleLightSwitch : LightState -> LightState
+toggleLightSwitch lightState =
+    case lightState of
+        LightOn ->
+            LightOff
+
+        LightOff ->
+            LightOn
+
+
 type Msg
-    = LightSwitched Bool
+    = LightSwitched LightState
     | WebSocketSendMsg
     | WebSocketGotMsg String
 
@@ -73,7 +83,7 @@ update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
 update msg model =
     case msg of
         LightSwitched state ->
-            { model | lightState = checkedToLightState state }
+            { model | lightState = state }
                 |> update WebSocketSendMsg
 
         WebSocketSendMsg ->
@@ -88,12 +98,9 @@ desk_light_switch model =
     Html.label
         [ Attributes.class "desk_light_switch" ]
         [ Html.text "state of light"
-        , Html.input
-            [ Attributes.type_ "checkbox"
-            , Attributes.checked (lightStateToChecked model.lightState)
-            , Events.onCheck LightSwitched
-            ]
-            []
+        , Html.button
+            [ Events.onClick (LightSwitched (toggleLightSwitch model.lightState)) ]
+            [ Html.text (lightStateToWebSocketMsg model.lightState) ]
         ]
 
 
