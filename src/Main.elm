@@ -1,10 +1,12 @@
-port module Main exposing (..) 
+port module  Main exposing (..)
 
 import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Platform.Cmd as Cmd
+import Svg
+import Svg.Attributes as SvgAtt
 
 
 type alias Model =
@@ -14,9 +16,9 @@ type alias Model =
 
 
 type alias RGB =
-    { r : Maybe Int
-    , g : Maybe Int
-    , b : Maybe Int
+    { r : String
+    , g : String
+    , b : String
     }
 
 
@@ -60,7 +62,7 @@ type Colour
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model LightOff (RGB Nothing Nothing Nothing), Cmd.none )
+    ( Model LightOff (RGB "0" "0" "0"), Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
@@ -89,7 +91,7 @@ updateColour colourType colour model =
                     updateRgb
                         (\rgb ->
                             { rgb
-                                | r = String.toInt colour
+                                | r = colour
                             }
                         )
                         model.rgb
@@ -101,7 +103,7 @@ updateColour colourType colour model =
                     updateRgb
                         (\rgb ->
                             { rgb
-                                | g = String.toInt colour
+                                | g = colour
                             }
                         )
                         model.rgb
@@ -113,7 +115,7 @@ updateColour colourType colour model =
                     updateRgb
                         (\rgb ->
                             { rgb
-                                | b = String.toInt colour
+                                | b = colour
                             }
                         )
                         model.rgb
@@ -138,14 +140,15 @@ desk_light_switch state =
         ]
 
 
-colourSlider : Colour -> Html Msg
-colourSlider colourType =
+colourSlider : Colour -> RGB -> Html Msg
+colourSlider colourType rgb =
     Html.div
         []
         [ Html.input
             [ Attributes.type_ "range"
             , Attributes.min "0"
             , Attributes.max "255"
+            , Attributes.value (getValueFromColourType colourType rgb)
             , Events.onInput (ColourChage colourType)
             ]
             [ Html.text "" ]
@@ -156,10 +159,50 @@ colourPicker : RGB -> Html Msg
 colourPicker rgb =
     Html.div
         []
-        [ colourSlider Red
-        , colourSlider Green
-        , colourSlider Blue
+        [ colourShower rgb
+        , colourSlider Red rgb
+        , colourSlider Green rgb
+        , colourSlider Blue rgb
         ]
+
+
+getValueFromColourType : Colour -> RGB -> String
+getValueFromColourType colour rgb =
+    case colour of
+        Red ->
+            rgb.r
+
+        Green ->
+            rgb.g
+
+        Blue ->
+            rgb.b
+
+
+colourShower rgb =
+    Html.div
+        []
+        [ Svg.svg
+            [ SvgAtt.viewBox "0 0 300 300"
+            , SvgAtt.width "255"
+            , SvgAtt.height "255"
+            , SvgAtt.fill (rgbToHtmlRgb rgb)
+            ]
+            [ Svg.rect
+                [ SvgAtt.width "300px"
+                , SvgAtt.height "300px"
+                ]
+                []
+            ]
+        ]
+
+
+rgbToHtmlRgb : RGB -> String
+rgbToHtmlRgb rgb =
+    "rgb(%r, %g, %b)"
+        |> String.replace "%r" rgb.r
+        |> String.replace "%g" rgb.g
+        |> String.replace "%b" rgb.b
 
 
 body : Model -> Html Msg
