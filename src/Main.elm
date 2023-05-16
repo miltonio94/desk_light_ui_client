@@ -1,4 +1,4 @@
-port module  Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Html exposing (Html)
@@ -179,6 +179,7 @@ getValueFromColourType colour rgb =
             rgb.b
 
 
+colourShower : RGB -> Html Msg
 colourShower rgb =
     Html.div
         []
