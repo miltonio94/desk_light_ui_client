@@ -2,3 +2,7 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+elm.js
+node_modules
+package.json
+package-lock.json

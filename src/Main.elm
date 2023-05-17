@@ -1,25 +1,17 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Module.ColourPicker as ColourPicker
 import Platform.Cmd as Cmd
+import Ports
 
 
 type alias Model =
     { lightState : LightState
-    }
-
-
-type WebSocketMsg
-    = IncomingMsg
-    | OutgoingMsg
-
-
-type alias Message =
-    { contents : String
-    , messageType : WebSocketMsg
+    , rgb : ColourPicker.RGB
     }
 
 
@@ -38,26 +30,6 @@ lightStateToWebSocketMsg lightState =
             "OFF"
 
 
-lightStateToChecked : LightState -> Bool
-lightStateToChecked state =
-    case state of
-        LightOn ->
-            True
-
-        LightOff ->
-            False
-
-
-checkedToLightState : Bool -> LightState
-checkedToLightState isChecked =
-    case isChecked of
-        True ->
-            LightOn
-
-        False ->
-            LightOff
-
-
 toggleLightSwitch : LightState -> LightState
 toggleLightSwitch lightState =
     case lightState of
@@ -72,11 +44,12 @@ type Msg
     = LightSwitched LightState
     | WebSocketSendMsg
     | WebSocketGotMsg String
+    | ColourChange ColourPicker.Colour String
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model LightOff, Cmd.none )
+    ( Model LightOff ColourPicker.initRgb, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
@@ -87,30 +60,44 @@ update msg model =
                 |> update WebSocketSendMsg
 
         WebSocketSendMsg ->
-            ( model, outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
+            ( model, Ports.outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
 
-        WebSocketGotMsg _ ->
+        WebSocketGotMsg string ->
             ( model, Cmd.none )
 
+        ColourChange colourType colour ->
+            ( ColourPicker.updateColour colourType colour model, Cmd.none )
 
-desk_light_switch : Model -> Html Msg
-desk_light_switch model =
-    Html.label
-        [ Attributes.class "desk_light_switch" ]
-        [ Html.text "state of light"
-        , Html.button
-            [ Events.onClick (LightSwitched (toggleLightSwitch model.lightState)) ]
-            [ Html.text (lightStateToWebSocketMsg model.lightState) ]
+
+desk_light_switch : LightState -> Html Msg
+desk_light_switch state =
+    Html.div []
+        [ Html.label
+            [ Attributes.class "desk_light_switch" ]
+            [ Html.text "state of light"
+            , Html.button
+                [ Events.onClick (LightSwitched (toggleLightSwitch state)) ]
+                [ Html.text (lightStateToWebSocketMsg state) ]
+            ]
+        ]
+
+
+body : Model -> Html Msg
+body model =
+    Html.div []
+        [ desk_light_switch model.lightState
+        , ColourPicker.colourPicker ColourChange model.rgb
         ]
 
 
 view : Model -> Browser.Document Msg
 view model =
     { title = "Desk light"
-    , body = [ desk_light_switch model ]
+    , body = [ body model ]
     }
 
 
+main : Program () Model Msg
 main =
     Browser.document
         { init = init
@@ -122,10 +109,5 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    incomingWebSocketMsg WebSocketGotMsg
-
-
-port incomingWebSocketMsg : (String -> msg) -> Sub msg
-
-
-port outgoingWebsocketMsg : String -> Cmd msg
+    Sub.batch
+        [ Ports.incomingWebSocketMsg WebSocketGotMsg ]
