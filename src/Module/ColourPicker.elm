@@ -1,4 +1,4 @@
-module Module.ColourPicker exposing (..)
+module Module.ColourPicker exposing (Colour, RGB, colourPicker, initRgb, updateColour)
 
 import Html exposing (Html)
 import Html.Attributes as Attributes
