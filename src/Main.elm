@@ -44,7 +44,7 @@ type Msg
     = LightSwitched LightState
     | WebSocketSendMsg
     | WebSocketGotMsg String
-    | ColourChage ColourPicker.Colour String
+    | ColourChange ColourPicker.Colour String
 
 
 init : () -> ( Model, Cmd Msg )
@@ -65,7 +65,7 @@ update msg model =
         WebSocketGotMsg string ->
             ( model, Cmd.none )
 
-        ColourChage colourType colour ->
+        ColourChange colourType colour ->
             ( ColourPicker.updateColour colourType colour model, Cmd.none )
 
 
@@ -86,7 +86,7 @@ body : Model -> Html Msg
 body model =
     Html.div []
         [ desk_light_switch model.lightState
-        , ColourPicker.colourPicker ColourChage model.rgb
+        , ColourPicker.colourPicker ColourChange model.rgb
         ]
 
 
