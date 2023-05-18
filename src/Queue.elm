@@ -1,4 +1,4 @@
-module Queue exposing (Queue, dequeu, enqueue, isEmpty, length, peek)
+module Queue exposing (Queue, dequeu, empty, enqueue, isEmpty, length, peek)
 
 
 type Queue a
