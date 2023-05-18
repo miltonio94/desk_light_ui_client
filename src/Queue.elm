@@ -91,5 +91,6 @@ headFromQueuDatalist =
     .queue >> List.head
 
 
+empty : Queue a
 empty =
     Empty
