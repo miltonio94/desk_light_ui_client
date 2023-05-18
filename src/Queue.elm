@@ -1,4 +1,4 @@
-module Queue exposing (Queue, dequeu, enqueue, length, peek)
+module Queue exposing (Queue, dequeu, enqueue, isEmpty, length, peek)
 
 
 type Queue a
@@ -11,6 +11,16 @@ type alias QueueData a =
     , tail : a
     , queue : List a
     }
+
+
+isEmpty : Queue a -> Bool
+isEmpty queue =
+    case queue of
+        Empty ->
+            True
+
+        _ ->
+            False
 
 
 dequeu : Queue a -> Queue a
