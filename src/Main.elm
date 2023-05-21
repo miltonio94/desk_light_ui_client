@@ -22,14 +22,14 @@ type LightState
     | LightOff
 
 
-lightStateToWebSocketMsg : LightState -> String
-lightStateToWebSocketMsg lightState =
+lightStateToEspCommand : LightState -> String
+lightStateToEspCommand lightState =
     case lightState of
         LightOn ->
-            "ON"
+            "STATE_ON"
 
         LightOff ->
-            "OFF"
+            "STATE_OFF"
 
 
 toggleLightSwitch : LightState -> LightState
@@ -70,18 +70,31 @@ update msg model =
             { model | lightState = state }
                 |> update
                     (state
-                        |> lightStateToWebSocketMsg
+                        |> lightStateToEspCommand
                         |> AddToQueue
                     )
 
         WebSocketSendMsg ->
-            ( model, Ports.outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
+            ( model, Ports.outgoingWebsocketMsg (lightStateToEspCommand model.lightState) )
 
         WebSocketGotMsg string ->
             ( model, Cmd.none )
 
         ColourChange colourType colour ->
-            ( ColourPicker.updateColour colourType colour model, Cmd.none )
+            ( ColourPicker.updateColour colourType colour model
+                |> (\m ->
+                        { m
+                            | webSocketQueue =
+                                Queue.enqueue
+                                    (ColourPicker.colourToString
+                                        colour
+                                        colourType
+                                    )
+                                    m.webSocketQueue
+                        }
+                   )
+            , Cmd.none
+            )
 
         AddToQueue value ->
             ( { model
@@ -100,7 +113,7 @@ desk_light_switch state =
             [ Html.text "state of light"
             , Html.button
                 [ Events.onClick (LightSwitched (toggleLightSwitch state)) ]
-                [ Html.text (lightStateToWebSocketMsg state) ]
+                [ Html.text (lightStateToEspCommand state) ]
             ]
         ]
 
