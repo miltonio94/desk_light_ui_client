@@ -1,4 +1,4 @@
-module Module.ColourPicker exposing (Colour, RGB, colourPicker, initRgb, updateColour)
+module Module.ColourPicker exposing (Colour, RGB, colourPicker, colourToString, initRgb, updateColour)
 
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -18,6 +18,19 @@ type Colour
     = Red
     | Blue
     | Green
+
+
+colourToString : String -> Colour -> String
+colourToString colourVal colour =
+    case colour of
+        Red ->
+            "R_" ++ colourVal
+
+        Green ->
+            "G_" ++ colourVal
+
+        Blue ->
+            "B_" ++ colourVal
 
 
 updateRgb : (RGB -> RGB) -> RGB -> RGB
