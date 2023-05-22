@@ -67,21 +67,25 @@ update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
 update msg model =
     case msg of
         LightSwitched state ->
-            { model | lightState = state }
-                |> update
-                    (state
-                        |> lightStateToWebSocketMsg
-                        |> AddToQueue
-                    )
+            ( { model | lightState = state }
+            , Ports.outgoingWebsocketMsg
+                (lightStateToWebSocketMsg state)
+            )
 
         WebSocketSendMsg ->
             ( model, Ports.outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
 
         WebSocketGotMsg string ->
-            ( model, Cmd.none )
+            ( updateModelFromWebsocketMsg string model, Cmd.none )
 
         ColourChange colourType colour ->
-            ( ColourPicker.updateColour colourType colour model, Cmd.none )
+            ( ColourPicker.updateColour
+                colourType
+                colour
+                model
+            , Ports.outgoingWebsocketMsg
+                (ColourPicker.colourToString colour colourType)
+            )
 
         AddToQueue value ->
             ( { model
@@ -90,6 +94,48 @@ update msg model =
               }
             , Cmd.none
             )
+
+
+updateModelFromWebsocketMsg : String -> Model -> Model
+updateModelFromWebsocketMsg msg model =
+    let
+        msgSplit =
+            String.split "_" msg
+
+        command =
+            List.head msgSplit
+                |> Maybe.withDefault ""
+
+        maybeValue =
+            List.tail msgSplit
+                |> Maybe.map
+                    (\l ->
+                        List.head l
+                            |> Maybe.withDefault "0"
+                    )
+    in
+    case ( command, maybeValue ) of
+        ( "R", Just value ) ->
+            ColourPicker.updateColour ColourPicker.Red value model
+
+        ( "G", Just value ) ->
+            ColourPicker.updateColour ColourPicker.Green value model
+
+        ( "B", Just value ) ->
+            ColourPicker.updateColour ColourPicker.Blue value model
+
+        ( "STATE", Just value ) ->
+            if value == "ON" then
+                { model | lightState = LightOn }
+
+            else
+                { model | lightState = LightOff }
+
+        ( "CONNECTED", Nothing ) ->
+            model
+
+        _ ->
+            model
 
 
 desk_light_switch : LightState -> Html Msg
