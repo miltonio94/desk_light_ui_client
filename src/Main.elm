@@ -7,13 +7,11 @@ import Html.Events as Events
 import Module.ColourPicker as ColourPicker
 import Platform.Cmd as Cmd
 import Ports
-import Queue exposing (Queue)
 
 
 type alias Model =
     { lightState : LightState
-    , rgb : ColourPicker.RGBa
-    , webSocketQueue : Queue String
+    , rgba : ColourPicker.RGBa
     }
 
 
@@ -54,8 +52,6 @@ toggleLightSwitch lightState =
 
 type Msg
     = LightSwitched LightState
-    | WebSocketSendMsg
-    | AddToQueue String
     | WebSocketGotMsg String
     | ColourChange ColourPicker.Colour String
 
@@ -63,8 +59,7 @@ type Msg
 initModel : Model
 initModel =
     { lightState = LightOff
-    , rgb = ColourPicker.initRgb
-    , webSocketQueue = Queue.empty
+    , rgba = ColourPicker.initRgba
     }
 
 
@@ -82,9 +77,6 @@ update msg model =
                 (lightStateToWebSocketMsg state)
             )
 
-        WebSocketSendMsg ->
-            ( model, Ports.outgoingWebsocketMsg (lightStateToWebSocketMsg model.lightState) )
-
         WebSocketGotMsg string ->
             ( updateModelFromWebsocketMsg string model, Cmd.none )
 
@@ -95,14 +87,6 @@ update msg model =
                 model
             , Ports.outgoingWebsocketMsg
                 (ColourPicker.colourToString colour colourType)
-            )
-
-        AddToQueue value ->
-            ( { model
-                | webSocketQueue =
-                    Queue.enqueue value model.webSocketQueue
-              }
-            , Cmd.none
             )
 
 
@@ -168,7 +152,7 @@ body : Model -> Html Msg
 body model =
     Html.div []
         [ desk_light_switch model.lightState
-        , ColourPicker.colourPicker ColourChange model.rgb
+        , ColourPicker.colourPicker ColourChange model.rgba
         ]
 
 
