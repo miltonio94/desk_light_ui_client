@@ -1,4 +1,4 @@
-module Module.ColourPicker exposing (Colour(..), RGB, colourPicker, colourToString, initRgb, updateColour)
+module Module.ColourPicker exposing (Colour(..), RGBa, colourPicker, colourToString, initRgb, updateColour)
 
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -7,10 +7,11 @@ import Svg
 import Svg.Attributes as SvgAtt
 
 
-type alias RGB =
+type alias RGBa =
     { r : String
     , g : String
     , b : String
+    , a : String
     }
 
 
@@ -18,6 +19,7 @@ type Colour
     = Red
     | Blue
     | Green
+    | Alpha
 
 
 colourToString : String -> Colour -> String
@@ -32,13 +34,16 @@ colourToString colourVal colour =
         Blue ->
             "B_" ++ colourVal
 
+        Alpha ->
+            "A_" ++ colourVal
 
-updateRgb : (RGB -> RGB) -> RGB -> RGB
+
+updateRgb : (RGBa -> RGBa) -> RGBa -> RGBa
 updateRgb updater rgb =
     updater rgb
 
 
-colourSlider : (Colour -> String -> msg) -> Colour -> RGB -> Html msg
+colourSlider : (Colour -> String -> msg) -> Colour -> RGBa -> Html msg
 colourSlider messenger colourType rgb =
     Html.div
         []
@@ -53,7 +58,7 @@ colourSlider messenger colourType rgb =
         ]
 
 
-colourPicker : (Colour -> String -> msg) -> RGB -> Html msg
+colourPicker : (Colour -> String -> msg) -> RGBa -> Html msg
 colourPicker msg rgb =
     Html.div
         []
@@ -61,10 +66,11 @@ colourPicker msg rgb =
         , colourSlider msg Red rgb
         , colourSlider msg Green rgb
         , colourSlider msg Blue rgb
+        , colourSlider msg Alpha rgb
         ]
 
 
-getValueFromColourType : Colour -> RGB -> String
+getValueFromColourType : Colour -> RGBa -> String
 getValueFromColourType colour rgb =
     case colour of
         Red ->
@@ -76,8 +82,11 @@ getValueFromColourType colour rgb =
         Blue ->
             rgb.b
 
+        Alpha ->
+            rgb.a
 
-colourShower : RGB -> Html msg
+
+colourShower : RGBa -> Html msg
 colourShower rgb =
     Html.div
         []
@@ -96,7 +105,7 @@ colourShower rgb =
         ]
 
 
-rgbToHtmlRgb : RGB -> String
+rgbToHtmlRgb : RGBa -> String
 rgbToHtmlRgb rgb =
     "rgb(%r, %g, %b)"
         |> String.replace "%r" rgb.r
@@ -104,12 +113,12 @@ rgbToHtmlRgb rgb =
         |> String.replace "%b" rgb.b
 
 
-initRgb : RGB
+initRgb : RGBa
 initRgb =
-    { r = "0", g = "0", b = "0" }
+    { r = "0", g = "0", b = "0", a = "0" }
 
 
-updateColour : Colour -> String -> { rgb | rgb : RGB } -> { rgb | rgb : RGB }
+updateColour : Colour -> String -> { rgb | rgb : RGBa } -> { rgb | rgb : RGBa }
 updateColour colourType colour model =
     case colourType of
         Red ->
@@ -143,6 +152,18 @@ updateColour colourType colour model =
                         (\rgb ->
                             { rgb
                                 | b = colour
+                            }
+                        )
+                        model.rgb
+            }
+
+        Alpha ->
+            { model
+                | rgb =
+                    updateRgb
+                        (\rgb ->
+                            { rgb
+                                | a = colour
                             }
                         )
                         model.rgb

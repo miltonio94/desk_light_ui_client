@@ -12,7 +12,7 @@ import Queue exposing (Queue)
 
 type alias Model =
     { lightState : LightState
-    , rgb : ColourPicker.RGB
+    , rgb : ColourPicker.RGBa
     , webSocketQueue : Queue String
     }
 
@@ -133,6 +133,9 @@ updateModelFromWebsocketMsg msg model =
 
         ( "B", Just value ) ->
             ColourPicker.updateColour ColourPicker.Blue value model
+
+        ( "A", Just value ) ->
+            ColourPicker.updateColour ColourPicker.Alpha value model
 
         ( "STATE", Just value ) ->
             if value == "ON" then
