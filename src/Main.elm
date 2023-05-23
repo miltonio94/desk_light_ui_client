@@ -26,6 +26,16 @@ lightStateToWebSocketMsg : LightState -> String
 lightStateToWebSocketMsg lightState =
     case lightState of
         LightOn ->
+            "STATE_ON"
+
+        LightOff ->
+            "STATE_OFF"
+
+
+lightStateToStr : LightState -> String
+lightStateToStr lightState =
+    case lightState of
+        LightOn ->
             "ON"
 
         LightOff ->
@@ -146,7 +156,7 @@ desk_light_switch state =
             [ Html.text "state of light"
             , Html.button
                 [ Events.onClick (LightSwitched (toggleLightSwitch state)) ]
-                [ Html.text (lightStateToWebSocketMsg state) ]
+                [ Html.text (lightStateToStr state) ]
             ]
         ]
 
