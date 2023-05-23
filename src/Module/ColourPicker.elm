@@ -38,8 +38,8 @@ colourToString colourVal colour =
             "A_" ++ colourVal
 
 
-updateRgb : (RGBa -> RGBa) -> RGBa -> RGBa
-updateRgb updater rgba =
+updateRgba : (RGBa -> RGBa) -> RGBa -> RGBa
+updateRgba updater rgba =
     updater rgba
 
 
@@ -94,7 +94,7 @@ colourShower rgba =
             [ SvgAtt.viewBox "0 0 300 300"
             , SvgAtt.width "255"
             , SvgAtt.height "255"
-            , SvgAtt.fill (rgbToHtmlRgba rgba)
+            , SvgAtt.fill (rgbaToHtmlRgb rgba)
             ]
             [ Svg.rect
                 [ SvgAtt.width "300px"
@@ -105,8 +105,8 @@ colourShower rgba =
         ]
 
 
-rgbToHtmlRgba : RGBa -> String
-rgbToHtmlRgba rgba =
+rgbaToHtmlRgb : RGBa -> String
+rgbaToHtmlRgb rgba =
     "rgb(%r, %g, %b)"
         |> String.replace "%r" rgba.r
         |> String.replace "%g" rgba.g
@@ -124,7 +124,7 @@ updateColour colourType colour model =
         Red ->
             { model
                 | rgba =
-                    updateRgb
+                    updateRgba
                         (\rgba ->
                             { rgba
                                 | r = colour
@@ -136,7 +136,7 @@ updateColour colourType colour model =
         Green ->
             { model
                 | rgba =
-                    updateRgb
+                    updateRgba
                         (\rgba ->
                             { rgba
                                 | g = colour
@@ -148,7 +148,7 @@ updateColour colourType colour model =
         Blue ->
             { model
                 | rgba =
-                    updateRgb
+                    updateRgba
                         (\rgba ->
                             { rgba
                                 | b = colour
@@ -160,7 +160,7 @@ updateColour colourType colour model =
         Alpha ->
             { model
                 | rgba =
-                    updateRgb
+                    updateRgba
                         (\rgba ->
                             { rgba
                                 | a = colour
