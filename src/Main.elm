@@ -4,7 +4,6 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
-import Html.Extra as Html
 import Module.ColourPicker as ColourPicker
 import Platform.Cmd as Cmd
 import Ports
