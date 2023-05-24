@@ -86,7 +86,7 @@ update msg model =
                 colour
                 model
             , Ports.outgoingWebsocketMsg
-                (ColourPicker.colourToString colour colourType)
+                (ColourPicker.colourToString colourType)
             )
 
 
@@ -107,19 +107,22 @@ updateModelFromWebsocketMsg msg model =
                         List.head l
                             |> Maybe.withDefault "0"
                     )
+
+        rgba =
+            model.rgba
     in
     case ( command, maybeValue ) of
         ( "R", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Red value model
+            ColourPicker.updateColour rgba.r value model
 
         ( "G", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Green value model
+            ColourPicker.updateColour rgba.g value model
 
         ( "B", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Blue value model
+            ColourPicker.updateColour rgba.b value model
 
         ( "A", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Alpha value model
+            ColourPicker.updateColour rgba.a value model
 
         ( "STATE", Just value ) ->
             if value == "ON" then

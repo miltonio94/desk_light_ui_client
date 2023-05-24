@@ -8,34 +8,34 @@ import Svg.Attributes as SvgAtt
 
 
 type alias RGBa =
-    { r : String
-    , g : String
-    , b : String
-    , a : String
+    { r : Colour
+    , g : Colour
+    , b : Colour
+    , a : Colour
     }
 
 
 type Colour
-    = Red
-    | Blue
-    | Green
-    | Alpha
+    = Red String
+    | Blue String
+    | Green String
+    | Alpha String
 
 
-colourToString : String -> Colour -> String
-colourToString colourVal colour =
+colourToString : Colour -> String
+colourToString colour =
     case colour of
-        Red ->
-            "R_" ++ colourVal
+        Red val ->
+            "R_" ++ val
 
-        Green ->
-            "G_" ++ colourVal
+        Green val ->
+            "G_" ++ val
 
-        Blue ->
-            "B_" ++ colourVal
+        Blue val ->
+            "B_" ++ val
 
-        Alpha ->
-            "A_" ++ colourVal
+        Alpha val ->
+            "A_" ++ val
 
 
 updateRgba : (RGBa -> RGBa) -> RGBa -> RGBa
@@ -43,15 +43,15 @@ updateRgba updater rgba =
     updater rgba
 
 
-colourSlider : (Colour -> String -> msg) -> Colour -> RGBa -> Html msg
-colourSlider messenger colourType rgba =
+colourSlider : (Colour -> String -> msg) -> Colour -> Html msg
+colourSlider messenger colourType =
     Html.div
         []
         [ Html.input
             [ Attributes.type_ "range"
             , Attributes.min "0"
             , Attributes.max "255"
-            , Attributes.value (getValueFromColourType colourType rgba)
+            , Attributes.value (getValueFromColourType colourType)
             , Events.onInput (messenger colourType)
             ]
             [ Html.text "" ]
@@ -63,27 +63,27 @@ colourPicker msg rgba =
     Html.div
         []
         [ colourShower rgba
-        , colourSlider msg Red rgba
-        , colourSlider msg Green rgba
-        , colourSlider msg Blue rgba
-        , colourSlider msg Alpha rgba
+        , colourSlider msg rgba.r
+        , colourSlider msg rgba.g
+        , colourSlider msg rgba.b
+        , colourSlider msg rgba.a
         ]
 
 
-getValueFromColourType : Colour -> RGBa -> String
-getValueFromColourType colour rgba =
+getValueFromColourType : Colour -> String
+getValueFromColourType colour =
     case colour of
-        Red ->
-            rgba.r
+        Red val ->
+            val
 
-        Green ->
-            rgba.g
+        Green val ->
+            val
 
-        Blue ->
-            rgba.b
+        Blue val ->
+            val
 
-        Alpha ->
-            rgba.a
+        Alpha val ->
+            val
 
 
 colourShower : RGBa -> Html msg
@@ -108,62 +108,62 @@ colourShower rgba =
 rgbaToHtmlRgb : RGBa -> String
 rgbaToHtmlRgb rgba =
     "rgb(%r, %g, %b)"
-        |> String.replace "%r" rgba.r
-        |> String.replace "%g" rgba.g
-        |> String.replace "%b" rgba.b
+        |> String.replace "%r" (getValueFromColourType rgba.r)
+        |> String.replace "%g" (getValueFromColourType rgba.g)
+        |> String.replace "%b" (getValueFromColourType rgba.b)
 
 
 initRgba : RGBa
 initRgba =
-    { r = "0", g = "0", b = "0", a = "0" }
+    { r = Red "0", g = Green "0", b = Blue "0", a = Alpha "0" }
 
 
 updateColour : Colour -> String -> { rgba | rgba : RGBa } -> { rgba | rgba : RGBa }
-updateColour colourType colour model =
+updateColour colourType val model =
     case colourType of
-        Red ->
+        Red _ ->
             { model
                 | rgba =
                     updateRgba
                         (\rgba ->
                             { rgba
-                                | r = colour
+                                | r = Red val
                             }
                         )
                         model.rgba
             }
 
-        Green ->
+        Green _ ->
             { model
                 | rgba =
                     updateRgba
                         (\rgba ->
                             { rgba
-                                | g = colour
+                                | g = Green val
                             }
                         )
                         model.rgba
             }
 
-        Blue ->
+        Blue _ ->
             { model
                 | rgba =
                     updateRgba
                         (\rgba ->
                             { rgba
-                                | b = colour
+                                | b = Blue val
                             }
                         )
                         model.rgba
             }
 
-        Alpha ->
+        Alpha _ ->
             { model
                 | rgba =
                     updateRgba
                         (\rgba ->
                             { rgba
-                                | a = colour
+                                | a = Alpha val
                             }
                         )
                         model.rgba
