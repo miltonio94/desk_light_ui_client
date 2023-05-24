@@ -119,10 +119,10 @@ initRgba =
 
 
 updateColour : Colour -> String -> { rgba | rgba : RGBa } -> { rgba | rgba : RGBa }
-updateColour colourType colour model =
+updateColour colourType colour state =
     case colourType of
         Red ->
-            { model
+            { state
                 | rgba =
                     updateRgba
                         (\rgba ->
@@ -130,11 +130,11 @@ updateColour colourType colour model =
                                 | r = colour
                             }
                         )
-                        model.rgba
+                        state.rgba
             }
 
         Green ->
-            { model
+            { state
                 | rgba =
                     updateRgba
                         (\rgba ->
@@ -142,11 +142,11 @@ updateColour colourType colour model =
                                 | g = colour
                             }
                         )
-                        model.rgba
+                        state.rgba
             }
 
         Blue ->
-            { model
+            { state
                 | rgba =
                     updateRgba
                         (\rgba ->
@@ -154,11 +154,11 @@ updateColour colourType colour model =
                                 | b = colour
                             }
                         )
-                        model.rgba
+                        state.rgba
             }
 
         Alpha ->
-            { model
+            { state
                 | rgba =
                     updateRgba
                         (\rgba ->
@@ -166,5 +166,5 @@ updateColour colourType colour model =
                                 | a = colour
                             }
                         )
-                        model.rgba
+                        state.rgba
             }
