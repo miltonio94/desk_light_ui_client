@@ -4,20 +4,48 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Html.Extra as Html
 import Module.ColourPicker as ColourPicker
 import Platform.Cmd as Cmd
 import Ports
 
 
-type alias Model =
+type Model
+    = Syncing SyncingOnConnect
+    | Connected State
+
+
+type alias State =
     { lightState : LightState
     , rgba : ColourPicker.RGBa
     }
 
 
+type SyncingOnConnect
+    = NotSynced
+    | Syncing_R String
+    | Syncing_RG String String
+    | Syncing_RGB String String String
+    | Syncing_RGBA ColourPicker.RGBa
+    | Synced ColourPicker.RGBa LightState
+
+
 type LightState
     = LightOn
     | LightOff
+
+
+stringToLightState : String -> LightState
+stringToLightState str =
+    case str of
+        "STATE_ON" ->
+            LightOn
+
+        "STATE_OFF" ->
+            LightOff
+
+        _ ->
+            LightOff
 
 
 lightStateToWebSocketMsg : LightState -> String
@@ -56,42 +84,96 @@ type Msg
     | ColourChange ColourPicker.Colour String
 
 
-initModel : Model
-initModel =
-    { lightState = LightOff
-    , rgba = ColourPicker.initRgba
-    }
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( initModel, Cmd.none )
+    ( Syncing NotSynced, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
 update msg model =
     case msg of
-        LightSwitched state ->
-            ( { model | lightState = state }
+        WebSocketGotMsg string ->
+            ( updateStateFromWebsocketMsg string model, Cmd.none )
+
+        _ ->
+            case model of
+                Syncing syncingStatus ->
+                    ( model, Cmd.none )
+
+                Connected state ->
+                    state
+                        |> updateState msg
+                        |> Tuple.mapFirst Connected
+
+
+updateState : Msg -> State -> ( State, Cmd.Cmd Msg )
+updateState msg state =
+    case msg of
+        LightSwitched lightState ->
+            ( { state | lightState = lightState }
             , Ports.outgoingWebsocketMsg
-                (lightStateToWebSocketMsg state)
+                (lightStateToWebSocketMsg lightState)
             )
 
-        WebSocketGotMsg string ->
-            ( updateModelFromWebsocketMsg string model, Cmd.none )
-
+        -- WebSocketGotMsg string ->
+        --     ( updateStateFromWebsocketMsg string state, Cmd.none )
         ColourChange colourType colour ->
             ( ColourPicker.updateColour
                 colourType
                 colour
-                model
+                state
             , Ports.outgoingWebsocketMsg
                 (ColourPicker.colourToString colour colourType)
             )
 
+        _ ->
+            ( state, Cmd.none )
 
-updateModelFromWebsocketMsg : String -> Model -> Model
-updateModelFromWebsocketMsg msg model =
+
+updateFromSyncingStatus : String -> Maybe String -> SyncingOnConnect -> SyncingOnConnect
+updateFromSyncingStatus cmd value syncingStatus =
+    case ( syncingStatus, value ) of
+        ( NotSynced, Just val ) ->
+            if cmd == "R" then
+                Syncing_R val
+
+            else
+                syncingStatus
+
+        ( Syncing_R r, Just val ) ->
+            if cmd == "G" then
+                Syncing_RG r val
+
+            else
+                syncingStatus
+
+        ( Syncing_RG r g, Just val ) ->
+            if cmd == "B" then
+                Syncing_RGB r g val
+
+            else
+                syncingStatus
+
+        ( Syncing_RGB r g b, Just val ) ->
+            if cmd == "A" then
+                Syncing_RGBA (ColourPicker.RGBa r g b val)
+
+            else
+                syncingStatus
+
+        ( Syncing_RGBA rgba, Just val ) ->
+            if cmd == "STATE" then
+                Synced rgba (stringToLightState (cmd ++ "_" ++ val))
+
+            else
+                syncingStatus
+
+        _ ->
+            syncingStatus
+
+
+updateStateFromWebsocketMsg : String -> Model -> Model
+updateStateFromWebsocketMsg msg model =
     let
         msgSplit =
             String.split "_" msg
@@ -108,31 +190,43 @@ updateModelFromWebsocketMsg msg model =
                             |> Maybe.withDefault "0"
                     )
     in
-    case ( command, maybeValue ) of
-        ( "R", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Red value model
+    case model of
+        Syncing syncingStatus ->
+            syncingStatus
+                |> updateFromSyncingStatus command maybeValue
+                |> (\ss ->
+                        case ss of
+                            Synced rgba state ->
+                                Connected (State state rgba)
 
-        ( "G", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Green value model
+                            _ ->
+                                Syncing ss
+                   )
 
-        ( "B", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Blue value model
+        Connected state ->
+            Connected <|
+                case ( command, maybeValue ) of
+                    ( "R", Just value ) ->
+                        ColourPicker.updateColour ColourPicker.Red value state
 
-        ( "A", Just value ) ->
-            ColourPicker.updateColour ColourPicker.Alpha value model
+                    ( "G", Just value ) ->
+                        ColourPicker.updateColour ColourPicker.Green value state
 
-        ( "STATE", Just value ) ->
-            if value == "ON" then
-                { model | lightState = LightOn }
+                    ( "B", Just value ) ->
+                        ColourPicker.updateColour ColourPicker.Blue value state
 
-            else
-                { model | lightState = LightOff }
+                    ( "A", Just value ) ->
+                        ColourPicker.updateColour ColourPicker.Alpha value state
 
-        ( "CONNECTED", Nothing ) ->
-            model
+                    ( "STATE", Just value ) ->
+                        if value == "ON" then
+                            { state | lightState = LightOn }
 
-        _ ->
-            model
+                        else
+                            { state | lightState = LightOff }
+
+                    _ ->
+                        state
 
 
 desk_light_switch : LightState -> Html Msg
@@ -150,10 +244,15 @@ desk_light_switch state =
 
 body : Model -> Html Msg
 body model =
-    Html.div []
-        [ desk_light_switch model.lightState
-        , ColourPicker.colourPicker ColourChange model.rgba
-        ]
+    case model of
+        Connected state ->
+            Html.div []
+                [ desk_light_switch state.lightState
+                , ColourPicker.colourPicker ColourChange state.rgba
+                ]
+
+        Syncing _ ->
+            Html.text "Connecting"
 
 
 view : Model -> Browser.Document Msg
