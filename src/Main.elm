@@ -97,7 +97,7 @@ update msg model =
 
         _ ->
             case model of
-                Syncing syncingStatus ->
+                Syncing _ ->
                     ( model, Cmd.none )
 
                 Connected state ->
