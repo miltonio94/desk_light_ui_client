@@ -15,7 +15,7 @@ type Model
 
 
 type alias State =
-    { lightState : LightState
+    { lightState : Bool
     , rgba : ColourPicker.RGBa
     }
 
@@ -26,59 +26,42 @@ type SyncingOnConnect
     | Syncing_RG String String
     | Syncing_RGB String String String
     | Syncing_RGBA ColourPicker.RGBa
-    | Synced ColourPicker.RGBa LightState
+    | Synced ColourPicker.RGBa Bool
 
 
-type LightState
-    = LightOn
-    | LightOff
-
-
-stringToLightState : String -> LightState
+stringToLightState : String -> Bool
 stringToLightState str =
     case str of
         "STATE_ON" ->
-            LightOn
+            True
 
         "STATE_OFF" ->
-            LightOff
+            False
 
         _ ->
-            LightOff
+            False
 
 
-lightStateToWebSocketMsg : LightState -> String
+lightStateToWebSocketMsg : Bool -> String
 lightStateToWebSocketMsg lightState =
-    case lightState of
-        LightOn ->
-            "STATE_ON"
+    if lightState then
+        "STATE_ON"
 
-        LightOff ->
-            "STATE_OFF"
+    else
+        "STATE_OFF"
 
 
-lightStateToStr : LightState -> String
+lightStateToStr : Bool -> String
 lightStateToStr lightState =
-    case lightState of
-        LightOn ->
-            "ON"
+    if lightState then
+        "ON"
 
-        LightOff ->
-            "OFF"
-
-
-toggleLightSwitch : LightState -> LightState
-toggleLightSwitch lightState =
-    case lightState of
-        LightOn ->
-            LightOff
-
-        LightOff ->
-            LightOn
+    else
+        "OFF"
 
 
 type Msg
-    = LightSwitched LightState
+    = LightSwitched Bool
     | WebSocketGotMsg String
     | ColourChange ColourPicker.Colour String
 
@@ -114,8 +97,6 @@ updateState msg state =
                 (lightStateToWebSocketMsg lightState)
             )
 
-        -- WebSocketGotMsg string ->
-        --     ( updateStateFromWebsocketMsg string state, Cmd.none )
         ColourChange colourType colour ->
             ( ColourPicker.updateColour
                 colourType
@@ -219,23 +200,23 @@ updateStateFromWebsocketMsg msg model =
 
                     ( "STATE", Just value ) ->
                         if value == "ON" then
-                            { state | lightState = LightOn }
+                            { state | lightState = True }
 
                         else
-                            { state | lightState = LightOff }
+                            { state | lightState = False }
 
                     _ ->
                         state
 
 
-desk_light_switch : LightState -> Html Msg
+desk_light_switch : Bool -> Html Msg
 desk_light_switch state =
     Html.div []
         [ Html.label
             [ Attributes.class "desk_light_switch" ]
             [ Html.text "state of light"
             , Html.button
-                [ Events.onClick (LightSwitched (toggleLightSwitch state)) ]
+                [ Events.onClick (LightSwitched (not state)) ]
                 [ Html.text (lightStateToStr state) ]
             ]
         ]
