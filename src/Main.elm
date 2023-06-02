@@ -133,6 +133,16 @@ updateFromSyncingStatus cmd value syncingStatus =
             syncingStatus
 
 
+syncingOnConnectToModel : SyncingOnConnect -> Model
+syncingOnConnectToModel syncingState =
+    case syncingState of
+        Synced rgba state ->
+            Connected (State state rgba)
+
+        _ ->
+            Syncing syncingState
+
+
 updateStateFromWebsocketMsg : String -> Model -> Model
 updateStateFromWebsocketMsg msg model =
     let
@@ -155,14 +165,7 @@ updateStateFromWebsocketMsg msg model =
         Syncing syncingStatus ->
             syncingStatus
                 |> updateFromSyncingStatus command maybeValue
-                |> (\ss ->
-                        case ss of
-                            Synced rgba state ->
-                                Connected (State state rgba)
-
-                            _ ->
-                                Syncing ss
-                   )
+                |> syncingOnConnectToModel
 
         Connected state ->
             Connected <|
