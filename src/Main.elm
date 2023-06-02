@@ -113,41 +113,21 @@ updateState msg state =
 
 updateFromSyncingStatus : String -> Maybe String -> SyncingOnConnect -> SyncingOnConnect
 updateFromSyncingStatus cmd value syncingStatus =
-    case ( syncingStatus, value ) of
-        ( NotSynced, Just val ) ->
-            if cmd == "R" then
-                Syncing_R val
+    case ( syncingStatus, value, cmd ) of
+        ( NotSynced, Just val, "R" ) ->
+            Syncing_R val
 
-            else
-                syncingStatus
+        ( Syncing_R r, Just val, "G" ) ->
+            Syncing_RG r val
 
-        ( Syncing_R r, Just val ) ->
-            if cmd == "G" then
-                Syncing_RG r val
+        ( Syncing_RG r g, Just val, "B" ) ->
+            Syncing_RGB r g val
 
-            else
-                syncingStatus
+        ( Syncing_RGB r g b, Just val, "A" ) ->
+            Syncing_RGBA (ColourPicker.RGBa r g b val)
 
-        ( Syncing_RG r g, Just val ) ->
-            if cmd == "B" then
-                Syncing_RGB r g val
-
-            else
-                syncingStatus
-
-        ( Syncing_RGB r g b, Just val ) ->
-            if cmd == "A" then
-                Syncing_RGBA (ColourPicker.RGBa r g b val)
-
-            else
-                syncingStatus
-
-        ( Syncing_RGBA rgba, Just val ) ->
-            if cmd == "STATE" then
-                Synced rgba (stringToLightState (cmd ++ "_" ++ val))
-
-            else
-                syncingStatus
+        ( Syncing_RGBA rgba, Just val, "STATE" ) ->
+            Synced rgba (stringToLightState (cmd ++ "_" ++ val))
 
         _ ->
             syncingStatus
