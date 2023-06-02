@@ -16,7 +16,7 @@ type Model
 
 
 type alias State =
-    { lightState : Bool
+    { lightIsOn : Bool
     , rgba : ColourPicker.RGBa
     }
 
@@ -93,7 +93,7 @@ updateState : Msg -> State -> ( State, Cmd.Cmd Msg )
 updateState msg state =
     case msg of
         LightSwitched lightState ->
-            ( { state | lightState = lightState }
+            ( { state | lightIsOn = lightState }
             , Ports.outgoingWebsocketMsg
                 (lightStateToWebSocketMsg lightState)
             )
@@ -201,10 +201,10 @@ updateStateFromWebsocketMsg msg model =
 
                     ( "STATE", Just value ) ->
                         if value == "ON" then
-                            { state | lightState = True }
+                            { state | lightIsOn = True }
 
                         else
-                            { state | lightState = False }
+                            { state | lightIsOn = False }
 
                     _ ->
                         state
@@ -228,7 +228,7 @@ body model =
     case model of
         Connected state ->
             Html.div []
-                [ desk_light_switch state.lightState
+                [ desk_light_switch state.lightIsOn
                 , ColourPicker.colourPicker ColourChange state.rgba
                 ]
 
