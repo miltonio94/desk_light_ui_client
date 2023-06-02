@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Module.ColourPicker as ColourPicker
+import Page.Connecting as Connecting
 import Platform.Cmd as Cmd
 import Ports
 
@@ -232,12 +233,12 @@ body model =
                 ]
 
         Syncing _ ->
-            Html.text "Connecting"
+            Connecting.view
 
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Desk light"
+    { title = "PIXIE"
     , body = [ body model ]
     }
 
