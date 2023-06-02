@@ -1,4 +1,15 @@
-module Module.ColourPicker exposing (Colour(..), RGBa, colourPicker, colourToString, initRgba, updateColour)
+module Module.ColourPicker exposing
+    ( Colour(..)
+    , RGBa
+    , colourPicker
+    , colourToString
+    , initRgba
+    , setA
+    , setB
+    , setG
+    , setR
+    , updateColour
+    )
 
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -13,6 +24,26 @@ type alias RGBa =
     , b : String
     , a : String
     }
+
+
+setR : RGBa -> String -> RGBa
+setR rgba r =
+    { rgba | r = r }
+
+
+setG : RGBa -> String -> RGBa
+setG rgba g =
+    { rgba | g = g }
+
+
+setB : RGBa -> String -> RGBa
+setB rgba b =
+    { rgba | b = b }
+
+
+setA : RGBa -> String -> RGBa
+setA rgba a =
+    { rgba | a = a }
 
 
 type Colour
@@ -124,47 +155,23 @@ updateColour colourType colour state =
         Red ->
             { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | r = colour
-                            }
-                        )
-                        state.rgba
+                    setR state.rgba colour
             }
 
         Green ->
             { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | g = colour
-                            }
-                        )
-                        state.rgba
+                    setG state.rgba colour
             }
 
         Blue ->
             { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | b = colour
-                            }
-                        )
-                        state.rgba
+                    setB state.rgba colour
             }
 
         Alpha ->
             { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | a = colour
-                            }
-                        )
-                        state.rgba
+                    setA state.rgba colour
             }
