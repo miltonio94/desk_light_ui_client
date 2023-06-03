@@ -5,13 +5,13 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Module.ColourPicker as ColourPicker
-import Page.Connecting as Connecting
+import Page.Connecting.Main as Connecting
 import Platform.Cmd as Cmd
 import Ports
 
 
 type Model
-    = Syncing SyncingOnConnect
+    = Syncing Connecting.Model
     | Connected State
 
 
@@ -19,28 +19,6 @@ type alias State =
     { lightIsOn : Bool
     , rgba : ColourPicker.RGBa
     }
-
-
-type SyncingOnConnect
-    = NotSynced
-    | Syncing_R String
-    | Syncing_RG String String
-    | Syncing_RGB String String String
-    | Syncing_RGBA ColourPicker.RGBa
-    | Synced ColourPicker.RGBa Bool
-
-
-stringToLightState : String -> Bool
-stringToLightState str =
-    case str of
-        "STATE_ON" ->
-            True
-
-        "STATE_OFF" ->
-            False
-
-        _ ->
-            False
 
 
 lightStateToWebSocketMsg : Bool -> String
@@ -69,7 +47,7 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Syncing NotSynced, Cmd.none )
+    ( Syncing Connecting.NotSynced, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
@@ -111,32 +89,10 @@ updateState msg state =
             ( state, Cmd.none )
 
 
-updateFromSyncingStatus : String -> Maybe String -> SyncingOnConnect -> SyncingOnConnect
-updateFromSyncingStatus cmd value syncingStatus =
-    case ( syncingStatus, value, cmd ) of
-        ( NotSynced, Just val, "R" ) ->
-            Syncing_R val
-
-        ( Syncing_R r, Just val, "G" ) ->
-            Syncing_RG r val
-
-        ( Syncing_RG r g, Just val, "B" ) ->
-            Syncing_RGB r g val
-
-        ( Syncing_RGB r g b, Just val, "A" ) ->
-            Syncing_RGBA (ColourPicker.RGBa r g b val)
-
-        ( Syncing_RGBA rgba, Just val, "STATE" ) ->
-            Synced rgba (stringToLightState (cmd ++ "_" ++ val))
-
-        _ ->
-            syncingStatus
-
-
-syncingOnConnectToModel : SyncingOnConnect -> Model
+syncingOnConnectToModel : Connecting.Model -> Model
 syncingOnConnectToModel syncingState =
     case syncingState of
-        Synced rgba state ->
+        Connecting.Synced rgba state ->
             Connected (State state rgba)
 
         _ ->
@@ -164,7 +120,7 @@ updateStateFromWebsocketMsg msg model =
     case model of
         Syncing syncingStatus ->
             syncingStatus
-                |> updateFromSyncingStatus command maybeValue
+                |> Connecting.update command maybeValue
                 |> syncingOnConnectToModel
 
         Connected state ->
