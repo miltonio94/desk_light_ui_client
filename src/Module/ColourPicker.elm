@@ -3,6 +3,7 @@ module Module.ColourPicker exposing
     , RGBa
     , colourPicker
     , colourToString
+    , init
     , initRgba
     , setA
     , setB
@@ -24,6 +25,11 @@ type alias RGBa =
     , b : String
     , a : String
     }
+
+
+init : RGBa
+init =
+    RGBa "0" "0" "0" "0"
 
 
 setR : RGBa -> String -> RGBa
