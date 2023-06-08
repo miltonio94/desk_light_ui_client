@@ -3,8 +3,15 @@ body {
 }
 
 .pixels {
-  background-color: #fefefe;
   height: 100px;
-  width: 75%;
+  width: 375px;
   margin: auto;
+}
+
+#NeoPixel--rect-body {
+  fill: #fefefe;
+}
+
+#NeoPixel--rect-inner-body {
+  fill: #fffffe;
 }
