@@ -8,11 +8,22 @@ import Module.ColourPicker as ColourPicker
 import Page.Connecting.Main as Connecting
 import Platform.Cmd as Cmd
 import Ports
+import Task
 
 
 type Model
-    = Syncing Connecting.Model
+    = Syncing Connecting.State
     | Connected State
+
+
+getConnectingState : Model -> Connecting.State
+getConnectingState model =
+    case model of
+        Syncing state ->
+            state
+
+        _ ->
+            Connecting.init
 
 
 type alias State =
@@ -42,29 +53,71 @@ lightStateToStr lightState =
 type Msg
     = LightSwitched Bool
     | WebSocketGotMsg String
+    | ConnectingMsg Connecting.Msg
     | ColourChange ColourPicker.Colour String
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Syncing Connecting.NotSynced, Cmd.none )
+    ( Syncing Connecting.init, Cmd.none )
+
+
+syncingToConnected : Model -> Model
+syncingToConnected model =
+    model
 
 
 update : Msg -> Model -> ( Model, Cmd.Cmd Msg )
 update msg model =
     case msg of
-        WebSocketGotMsg string ->
-            ( updateStateFromWebsocketMsg string model, Cmd.none )
-
-        _ ->
+        LightSwitched _ ->
             case model of
-                Syncing _ ->
-                    ( model, Cmd.none )
-
                 Connected state ->
                     state
                         |> updateState msg
                         |> Tuple.mapFirst Connected
+
+                Syncing _ ->
+                    ( model, Cmd.none )
+
+        WebSocketGotMsg str ->
+            updateStateFromWebsocketMsg str model
+
+        ConnectingMsg connectingMsg ->
+            ( Syncing
+                (Connecting.update
+                    connectingMsg
+                    (getConnectingState model)
+                )
+            , Cmd.none
+            )
+                |> (\( m, cmd ) ->
+                        case m of
+                            Syncing mc ->
+                                mc.syncingState
+                                    |> Connecting.getConnectedVal
+                                    |> (\mt ->
+                                            case mt of
+                                                Just ( rgba, state ) ->
+                                                    ( Connected (State state rgba), cmd )
+
+                                                Nothing ->
+                                                    ( m, cmd )
+                                       )
+
+                            _ ->
+                                ( m, cmd )
+                   )
+
+        ColourChange _ _ ->
+            case model of
+                Connected state ->
+                    state
+                        |> updateState msg
+                        |> Tuple.mapFirst Connected
+
+                Syncing _ ->
+                    ( model, Cmd.none )
 
 
 updateState : Msg -> State -> ( State, Cmd.Cmd Msg )
@@ -89,17 +142,47 @@ updateState msg state =
             ( state, Cmd.none )
 
 
-syncingOnConnectToModel : Connecting.Model -> Model
+syncingOnConnectToModel : Connecting.State -> Model
 syncingOnConnectToModel syncingState =
-    case syncingState of
-        Connecting.Synced rgba state ->
+    case syncingState.syncingState of
+        Connecting.Connected rgba state ->
             Connected (State state rgba)
 
         _ ->
             Syncing syncingState
 
 
-updateStateFromWebsocketMsg : String -> Model -> Model
+websocketMsgToConnectingMsg : String -> Connecting.Connecting -> Cmd Msg
+websocketMsgToConnectingMsg msg connecting =
+    let
+        msgSplit =
+            String.split "_" msg
+
+        command =
+            List.head msgSplit
+                |> Maybe.withDefault ""
+
+        maybeValue =
+            List.tail msgSplit
+                |> Maybe.map
+                    (\l ->
+                        List.head l
+                            |> Maybe.withDefault "0"
+                    )
+    in
+    Cmd.none
+        |> Cmd.map
+            (always
+                (ConnectingMsg
+                    (Connecting.Sync
+                        connecting
+                        ( command, maybeValue )
+                    )
+                )
+            )
+
+
+updateStateFromWebsocketMsg : String -> Model -> ( Model, Cmd.Cmd Msg )
 updateStateFromWebsocketMsg msg model =
     let
         msgSplit =
@@ -119,34 +202,46 @@ updateStateFromWebsocketMsg msg model =
     in
     case model of
         Syncing syncingStatus ->
-            syncingStatus
-                |> Connecting.update command maybeValue
-                |> syncingOnConnectToModel
+            ( model
+            , Task.perform
+                (always
+                    (ConnectingMsg
+                        (Connecting.Sync
+                            syncingStatus.syncingState
+                            ( command, maybeValue )
+                        )
+                    )
+                )
+                (Task.succeed ())
+            )
 
         Connected state ->
-            Connected <|
-                case ( command, maybeValue ) of
-                    ( "R", Just value ) ->
-                        ColourPicker.updateColour ColourPicker.Red value state
+            Tuple.pair
+                (Connected <|
+                    case ( command, maybeValue ) of
+                        ( "R", Just value ) ->
+                            ColourPicker.updateColour ColourPicker.Red value state
 
-                    ( "G", Just value ) ->
-                        ColourPicker.updateColour ColourPicker.Green value state
+                        ( "G", Just value ) ->
+                            ColourPicker.updateColour ColourPicker.Green value state
 
-                    ( "B", Just value ) ->
-                        ColourPicker.updateColour ColourPicker.Blue value state
+                        ( "B", Just value ) ->
+                            ColourPicker.updateColour ColourPicker.Blue value state
 
-                    ( "A", Just value ) ->
-                        ColourPicker.updateColour ColourPicker.Alpha value state
+                        ( "A", Just value ) ->
+                            ColourPicker.updateColour ColourPicker.Alpha value state
 
-                    ( "STATE", Just value ) ->
-                        if value == "ON" then
-                            { state | lightIsOn = True }
+                        ( "STATE", Just value ) ->
+                            if value == "ON" then
+                                { state | lightIsOn = True }
 
-                        else
-                            { state | lightIsOn = False }
+                            else
+                                { state | lightIsOn = False }
 
-                    _ ->
-                        state
+                        _ ->
+                            state
+                )
+                Cmd.none
 
 
 desk_light_switch : Bool -> Html Msg

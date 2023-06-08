@@ -1,23 +1,93 @@
-module Page.Connecting.Main exposing (Model(..), update, view)
+module Page.Connecting.Main exposing
+    ( Connecting(..)
+    , Msg(..)
+    , State
+    , SyncingVal
+    , getConnectedVal
+    , init
+    , isConnected
+    , update
+    , updateSyncing
+    , view
+    )
 
 import Html exposing (Html, div)
-import Html.Attributes as Attributes exposing (class)
-import Module.ColourPicker as ColourPicker
+import Html.Attributes exposing (class)
+import Module.ColourPicker as ColourPicker exposing (RGBa)
+import Module.Icon.NeoPixel exposing (neoPixel)
 
 
-type Model
-    = NotSynced
+type alias State =
+    { animatedPixels : List RGBa
+    , syncingState : Connecting
+    }
+
+
+init : State
+init =
+    { animatedPixels =
+        [ ColourPicker.init
+        , ColourPicker.init
+        , ColourPicker.init
+        , ColourPicker.init
+        , ColourPicker.init
+        ]
+    , syncingState = NotConnected
+    }
+
+
+type alias SyncingVal =
+    ( String, Maybe String )
+
+
+type Msg
+    = AnimateNextFrame
+    | Sync Connecting SyncingVal
+
+
+type Connecting
+    = NotConnected
     | Syncing_R String
     | Syncing_RG String String
     | Syncing_RGB String String String
     | Syncing_RGBA ColourPicker.RGBa
-    | Synced ColourPicker.RGBa Bool
+    | Connected ColourPicker.RGBa Bool
 
 
-update : String -> Maybe String -> Model -> Model
-update cmd value syncingStatus =
-    case ( syncingStatus, value, cmd ) of
-        ( NotSynced, Just val, "R" ) ->
+getConnectedVal : Connecting -> Maybe ( ColourPicker.RGBa, Bool )
+getConnectedVal connecting =
+    case connecting of
+        Connected rgba state ->
+            Just ( rgba, state )
+
+        _ ->
+            Nothing
+
+
+isConnected : Connecting -> Bool
+isConnected connecting =
+    case connecting of
+        Connected _ _ ->
+            True
+
+        _ ->
+            False
+
+
+update : Msg -> State -> State
+update msg state =
+    case msg of
+        AnimateNextFrame ->
+            state
+
+        Sync syncing ( cmd, val ) ->
+            { state | syncingState = updateSyncing cmd val syncing }
+
+
+updateSyncing : String -> Maybe String -> Connecting -> Connecting
+updateSyncing cmd value state =
+    case ( state, value, cmd ) of
+        ( NotConnected, Just val, "R" ) ->
             Syncing_R val
 
         ( Syncing_R r, Just val, "G" ) ->
@@ -30,10 +100,10 @@ update cmd value syncingStatus =
             Syncing_RGBA (ColourPicker.RGBa r g b val)
 
         ( Syncing_RGBA rgba, Just val, "STATE" ) ->
-            Synced rgba (stringToLightState (cmd ++ "_" ++ val))
+            Connected rgba (stringToLightState (cmd ++ "_" ++ val))
 
         _ ->
-            syncingStatus
+            state
 
 
 stringToLightState : String -> Bool
@@ -53,13 +123,9 @@ view : Html ms
 view =
     div
         [ class "pixels" ]
-        [ div
-            [ class "pixel" ]
-            []
-        , div
-            [ class "pixel" ]
-            []
-        , div
-            [ class "pixel" ]
-            []
+        [ neoPixel "red"
+        , neoPixel "red"
+        , neoPixel "red"
+        , neoPixel "red"
+        , neoPixel "red"
         ]
