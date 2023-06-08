@@ -1,0 +1,17 @@
+body {
+  background-color: #f5f5f5;
+}
+
+.pixels {
+  height: 100px;
+  width: 375px;
+  margin: auto;
+}
+
+#NeoPixel--rect-body {
+  fill: #fefefe;
+}
+
+#NeoPixel--rect-inner-body {
+  fill: #fffffe;
+}

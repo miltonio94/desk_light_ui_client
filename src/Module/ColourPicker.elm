@@ -1,4 +1,16 @@
-module Module.ColourPicker exposing (Colour(..), RGBa, colourPicker, colourToString, initRgba, updateColour)
+module Module.ColourPicker exposing
+    ( Colour(..)
+    , RGBa
+    , colourPicker
+    , colourToString
+    , init
+    , initRgba
+    , setA
+    , setB
+    , setG
+    , setR
+    , updateColour
+    )
 
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -13,6 +25,31 @@ type alias RGBa =
     , b : String
     , a : String
     }
+
+
+init : RGBa
+init =
+    RGBa "0" "0" "0" "0"
+
+
+setR : RGBa -> String -> RGBa
+setR rgba r =
+    { rgba | r = r }
+
+
+setG : RGBa -> String -> RGBa
+setG rgba g =
+    { rgba | g = g }
+
+
+setB : RGBa -> String -> RGBa
+setB rgba b =
+    { rgba | b = b }
+
+
+setA : RGBa -> String -> RGBa
+setA rgba a =
+    { rgba | a = a }
 
 
 type Colour
@@ -119,52 +156,28 @@ initRgba =
 
 
 updateColour : Colour -> String -> { rgba | rgba : RGBa } -> { rgba | rgba : RGBa }
-updateColour colourType colour model =
+updateColour colourType colour state =
     case colourType of
         Red ->
-            { model
+            { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | r = colour
-                            }
-                        )
-                        model.rgba
+                    setR state.rgba colour
             }
 
         Green ->
-            { model
+            { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | g = colour
-                            }
-                        )
-                        model.rgba
+                    setG state.rgba colour
             }
 
         Blue ->
-            { model
+            { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | b = colour
-                            }
-                        )
-                        model.rgba
+                    setB state.rgba colour
             }
 
         Alpha ->
-            { model
+            { state
                 | rgba =
-                    updateRgba
-                        (\rgba ->
-                            { rgba
-                                | a = colour
-                            }
-                        )
-                        model.rgba
+                    setA state.rgba colour
             }
